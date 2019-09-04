@@ -13,6 +13,8 @@ namespace DBSizeChecker
         private static Configuration _cfg;
         private static GoogleClient _google;
 
+        private static Timer _timer;
+
         private static void Main(string[] args)
         {
             var currentPath = Environment.CurrentDirectory;
@@ -29,12 +31,12 @@ namespace DBSizeChecker
 
             _google = new GoogleClient(_cfg.Google);
 
-            var timer = new Timer();
-            timer.Interval = _cfg.RetryInterval * 1000;
-            timer.AutoReset = true;
-            timer.Enabled = true;
-            timer.Elapsed += Timer_Elapsed;
-            timer.Start();
+            _timer = new Timer();
+            _timer.Interval = _cfg.RetryInterval * 1000;
+            _timer.AutoReset = false;
+            _timer.Enabled = true;
+            _timer.Elapsed += Timer_Elapsed;
+            _timer.Start();
             WaitLoop();
         }
 
@@ -47,14 +49,17 @@ namespace DBSizeChecker
 
         private static void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
+            _timer.Stop();
             try
                 {
                     Update();
+                    
                 } catch(Exception exception)
                 {
                     Console.WriteLine($"Possible one ore more network errors... Retry through {_cfg.RetryInterval*1000} seconds");
                    
                 }
+            _timer.Start();
         }
 
         private static void Update()
